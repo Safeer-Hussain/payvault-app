@@ -1,0 +1,43 @@
+name: PayVault Enterprise CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-verify:
+    name: Lint, Analyze, Test & Coverage Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter Stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: false
+
+      - name: Verify Environment & Tools
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Enforce Dart Code Formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Static Code Analysis (Zero Warning Enclave)
+        run: flutter analyze --no-pub
+
+      - name: Run Automated Test Suite & Generate LCOV
+        run: flutter test --no-pub --coverage
+
+      - name: Verify Sprint Gate
+        run: dart run tool/sprint_gate.dart
